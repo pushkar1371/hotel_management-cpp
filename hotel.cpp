@@ -1,38 +1,30 @@
-/*
-    Title        : Hotel Management System
-    Language     : Modern C++ (g++)
-    Author       : Pushkar Bopanwar
-    Updated By   : Pushkar
-*/
-
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include <cstring>
-
+#include <string>
 using namespace std;
 
 // MARK:- Interface Functions
 
 void intro()
 {
-    cout << "\n\n\t   C++ Project On Hotel Management System";
-    cout << "\n\n\t\t\t     MADE BY";
-    cout << "\n----------------------------------------------";
-    cout << "\n\t\t\t   Pushkar Deepak Bopanwar";
-    cout << "\n----------------------------------------------\n";
+    cout << "\n\n\t====================================================";
+    cout << "\n\t           HOTEL MANAGEMENT SYSTEM";
+    cout << "\n\t====================================================";
+    cout << "\n\t\t\t   MADE BY Pushkar Deepak Bopanwar";
+    cout << "\n\t====================================================\n";
 }
 
 void head()
 {
-    cout << "\n----------------------------------------------";
-    cout << "\n\t\t  FCMR Group of Hotels";
-    cout << "\n----------------------------------------------\n";
+    cout << "\n\t----------------------------------------------------";
+    cout << "\n\t\t      FCMR GROUP OF HOTELS";
+    cout << "\n\t----------------------------------------------------\n";
 }
 
 void waitForEnter()
 {
-    cout << "\nPress ENTER to continue...";
+    cout << "\n\tPress ENTER to continue...";
     cin.ignore();
     cin.get();
 }
@@ -50,26 +42,74 @@ private:
     float fare;
 
 public:
-    void main_menu();     // main menu
-    void add();           // book a room
-    void display();       // display a customer record
-    void rooms();         // display all rooms
-    void edit();          // edit a record
-    int check(int);       // check if room is booked
-    void modify(int);     // modify a record
-    void delete_rec(int); // delete a record
+    // Getters
+    int getRoomNo() const { return room_no; }
+    string getName() const { return name; }
+    string getAddress() const { return address; }
+    string getPhone() const { return phone; }
+    int getDays() const { return days; }
+    float getFare() const { return fare; }
+
+    // Setters
+    void setRoomNo(int r) { room_no = r; }
+    void setName(const string &n) { name = n; }
+    void setAddress(const string &a) { address = a; }
+    void setPhone(const string &p) { phone = p; }
+    void setDays(int d)
+    {
+        days = d;
+        fare = days * 900;
+    }
+
+    // Member functions
+    void main_menu();
+    void add();
+    void display();
+    void rooms();
+    void edit();
+    int check(int);
+
+    // Helper functions to read/write text
+    void writeRecord(ofstream &fout) const;
+    bool readRecord(ifstream &fin);
 };
+
+// MARK:- Text File Helpers
+
+void hotel::writeRecord(ofstream &fout) const
+{
+    fout << room_no << '\n'
+         << name << '\n'
+         << address << '\n'
+         << phone << '\n'
+         << days << '\n'
+         << fare << '\n';
+}
+
+bool hotel::readRecord(ifstream &fin)
+{
+    if (!(fin >> room_no))
+        return false;
+    fin.ignore();
+    getline(fin, name);
+    getline(fin, address);
+    getline(fin, phone);
+    fin >> days;
+    fin >> fare;
+    fin.ignore();
+    return true;
+}
+
+// MARK:- Main Menu Functions
 
 void hotel::main_menu()
 {
     int choice = 0;
     while (choice != 5)
     {
-        system("clear"); // use "cls" for Windows
+        system("clear");
         head();
-        cout << "\n\t*************";
-        cout << "\n\t* MAIN MENU *";
-        cout << "\n\t*************";
+        cout << "\n\t******************** MAIN MENU ********************";
         cout << "\n\n1. Book A Room";
         cout << "\n2. Customer Record";
         cout << "\n3. Rooms Allotted";
@@ -93,9 +133,10 @@ void hotel::main_menu()
             edit();
             break;
         case 5:
+            cout << "\n\tThank you for using the system!\n";
             break;
         default:
-            cout << "\nWrong choice!";
+            cout << "\n\tInvalid choice! Try again.";
             waitForEnter();
         }
     }
@@ -105,32 +146,40 @@ void hotel::add()
 {
     system("clear");
     head();
-    int r, flag;
-    ofstream fout("Record.dat", ios::app | ios::binary);
-    cout << "\nEnter Customer Details";
-    cout << "\n----------------------";
-    cout << "\nRoom no: ";
+    int r;
+    cout << "\n\t****************** BOOK A ROOM ******************\n";
+    cout << "\nEnter Room No: ";
     cin >> r;
-    flag = check(r);
-    if (flag)
-        cout << "\nSorry..!!! Room is already booked";
+
+    if (check(r))
+    {
+        cout << "\n\tSorry! Room " << r << " is already booked.";
+    }
     else
     {
-        room_no = r;
+        setRoomNo(r);
         cin.ignore();
+        string temp;
         cout << "Name: ";
-        getline(cin, name);
+        getline(cin, temp);
+        setName(temp);
         cout << "Address: ";
-        getline(cin, address);
+        getline(cin, temp);
+        setAddress(temp);
         cout << "Phone No: ";
-        getline(cin, phone);
+        getline(cin, temp);
+        setPhone(temp);
+        int d;
         cout << "No of Days to Checkout: ";
-        cin >> days;
-        fare = days * 900; // default price per day
-        fout.write((char *)this, sizeof(hotel));
-        cout << "\nRoom is booked...!!!";
+        cin >> d;
+        setDays(d);
+
+        ofstream fout("Record.txt", ios::app);
+        writeRecord(fout);
+        fout.close();
+
+        cout << "\n\tRoom " << r << " booked successfully!";
     }
-    fout.close();
     waitForEnter();
 }
 
@@ -138,30 +187,33 @@ void hotel::display()
 {
     system("clear");
     head();
-    ifstream fin("Record.dat", ios::in | ios::binary);
-    int r, flag = 0;
-    cout << "\nEnter room no: ";
+    ifstream fin("Record.txt");
+    int r;
+    bool flag = false;
+    cout << "\n\t*************** CUSTOMER RECORD ****************\n";
+    cout << "\nEnter Room No: ";
     cin >> r;
-    while (fin.read((char *)this, sizeof(hotel)))
+
+    hotel temp;
+    while (temp.readRecord(fin))
     {
-        if (room_no == r)
+        if (temp.getRoomNo() == r)
         {
             system("clear");
             head();
-            cout << "\nCustomer Details";
-            cout << "\n----------------";
-            cout << "\nRoom no: " << room_no;
-            cout << "\nName: " << name;
-            cout << "\nAddress: " << address;
-            cout << "\nPhone no: " << phone;
-            cout << "\nDays: " << days;
-            cout << "\nTotal Fare: " << fare;
-            flag = 1;
+            cout << "\n\t********** CUSTOMER DETAILS **********\n";
+            cout << "Room No      : " << temp.getRoomNo() << "\n";
+            cout << "Name         : " << temp.getName() << "\n";
+            cout << "Address      : " << temp.getAddress() << "\n";
+            cout << "Phone No     : " << temp.getPhone() << "\n";
+            cout << "Days         : " << temp.getDays() << "\n";
+            cout << "Total Fare   : " << temp.getFare() << "\n";
+            flag = true;
             break;
         }
     }
-    if (flag == 0)
-        cout << "\nSorry Room no. not found or vacant....!!";
+    if (!flag)
+        cout << "\n\tSorry! Room not found or vacant.";
     fin.close();
     waitForEnter();
 }
@@ -170,18 +222,37 @@ void hotel::rooms()
 {
     system("clear");
     head();
-    ifstream fin("Record.dat", ios::in | ios::binary);
-    cout << "\nList Of Rooms Allotted";
-    cout << "\n----------------------";
-    while (fin.read((char *)this, sizeof(hotel)))
+    ifstream fin("Record.txt");
+    hotel temp;
+    cout << "\n\t************* ROOMS ALLOTTED *************\n";
+    while (temp.readRecord(fin))
     {
-        cout << "\nRoom no: " << room_no << "\nName: " << name;
-        cout << "\nAddress: " << address << "\nPhone: " << phone;
-        cout << "\nDays: " << days << "\nTotal: " << fare;
-        cout << "\n**********************************";
+        cout << "\nRoom No      : " << temp.getRoomNo();
+        cout << "\nName         : " << temp.getName();
+        cout << "\nAddress      : " << temp.getAddress();
+        cout << "\nPhone No     : " << temp.getPhone();
+        cout << "\nDays         : " << temp.getDays();
+        cout << "\nTotal Fare   : " << temp.getFare();
+        cout << "\n--------------------------------------------";
     }
     fin.close();
     waitForEnter();
+}
+
+int hotel::check(int r)
+{
+    ifstream fin("Record.txt");
+    hotel temp;
+    while (temp.readRecord(fin))
+    {
+        if (temp.getRoomNo() == r)
+        {
+            fin.close();
+            return 1;
+        }
+    }
+    fin.close();
+    return 0;
 }
 
 void hotel::edit()
@@ -189,119 +260,67 @@ void hotel::edit()
     system("clear");
     head();
     int choice, r;
-    cout << "\nEDIT MENU";
-    cout << "\n---------";
-    cout << "\n1. Modify Customer Record";
-    cout << "\n2. Delete Customer Record";
+    cout << "\n\t**************** EDIT MENU ****************\n";
+    cout << "1. Modify Customer Record\n2. Delete Customer Record\n";
     cout << "\nEnter your choice: ";
     cin >> choice;
-
-    cout << "\nEnter room no: ";
+    cout << "Enter Room No: ";
     cin >> r;
-    switch (choice)
-    {
-    case 1:
-        modify(r);
-        break;
-    case 2:
-        delete_rec(r);
-        break;
-    default:
-        cout << "\nWrong Choice.....!!";
-    }
-    waitForEnter();
-}
 
-int hotel::check(int r)
-{
-    int flag = 0;
-    ifstream fin("Record.dat", ios::in | ios::binary);
-    while (fin.read((char *)this, sizeof(hotel)))
-    {
-        if (room_no == r)
-        {
-            flag = 1;
-            break;
-        }
-    }
-    fin.close();
-    return flag;
-}
+    ifstream fin("Record.txt");
+    ofstream fout("Temp.txt");
+    hotel temp;
+    bool found = false;
 
-void hotel::modify(int r)
-{
-    system("clear");
-    head();
-    long pos;
-    int flag = 0;
-    fstream file("Record.dat", ios::in | ios::out | ios::binary);
-    while (file.read((char *)this, sizeof(hotel)))
+    while (temp.readRecord(fin))
     {
-        pos = file.tellg();
-        if (room_no == r)
+        if (temp.getRoomNo() == r)
         {
-            cout << "\nEnter New Details";
-            cout << "\n-----------------";
-            cin.ignore();
-            cout << "Name: ";
-            getline(cin, name);
-            cout << "Address: ";
-            getline(cin, address);
-            cout << "Phone no: ";
-            getline(cin, phone);
-            cout << "Days: ";
-            cin >> days;
-            fare = days * 900;
-            file.seekp(pos - sizeof(hotel));
-            file.write((char *)this, sizeof(hotel));
-            cout << "\nRecord is modified....!!";
-            flag = 1;
-            break;
-        }
-    }
-    if (flag == 0)
-        cout << "\nSorry Room no. not found or vacant...!!";
-    file.close();
-}
-
-void hotel::delete_rec(int r)
-{
-    system("clear");
-    head();
-    int flag = 0;
-    char ch;
-    ifstream fin("Record.dat", ios::in | ios::binary);
-    ofstream fout("temp.dat", ios::out | ios::binary);
-    while (fin.read((char *)this, sizeof(hotel)))
-    {
-        if (room_no == r)
-        {
-            cout << "\nName: " << name;
-            cout << "\nAddress: " << address;
-            cout << "\nPhone No: " << phone;
-            cout << "\nDays: " << days;
-            cout << "\nTotal Fare: " << fare;
-            cout << "\n\nDo you want to delete this record (y/n): ";
-            cin >> ch;
-            if (ch == 'n')
-                fout.write((char *)this, sizeof(hotel));
-            flag = 1;
+            found = true;
+            if (choice == 1)
+            {
+                cin.ignore();
+                string t;
+                cout << "New Name: ";
+                getline(cin, t);
+                temp.setName(t);
+                cout << "New Address: ";
+                getline(cin, t);
+                temp.setAddress(t);
+                cout << "New Phone: ";
+                getline(cin, t);
+                temp.setPhone(t);
+                int d;
+                cout << "New Days: ";
+                cin >> d;
+                temp.setDays(d);
+                cout << "\n\tRecord modified!";
+                temp.writeRecord(fout);
+            }
+            else if (choice == 2)
+            {
+                char ch;
+                cout << "\nDo you want to delete this record (y/n): ";
+                cin >> ch;
+                if (ch == 'n')
+                    temp.writeRecord(fout); // keep record
+                continue;                   // skip writing to delete
+            }
         }
         else
         {
-            fout.write((char *)this, sizeof(hotel));
+            temp.writeRecord(fout); // write unmodified records
         }
     }
+
     fin.close();
     fout.close();
-    if (flag == 0)
-        cout << "\nSorry room no. not found or vacant...!!";
-    else
-    {
-        remove("Record.dat");
-        rename("temp.dat", "Record.dat");
-        cout << "\nRecord deleted successfully!";
-    }
+    remove("Record.txt");
+    rename("Temp.txt", "Record.txt");
+
+    if (!found)
+        cout << "\n\tRoom not found!";
+    waitForEnter();
 }
 
 // MARK:- Main Function
@@ -331,3 +350,4 @@ int main()
     h.main_menu();
     return 0;
 }
+
